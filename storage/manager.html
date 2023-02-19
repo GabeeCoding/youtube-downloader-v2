@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="style.css">
+		<title>YouTube Downloader - Download Manager</title>
+	</head>
+
+	<body>
+		<div id="sidebar">
+			<p class="top">YTDL</p>
+			<a href="index.html">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+					<path fill="white"
+						d="M946.5 505L534.6 93.4a31.93 31.93 0 0 0-45.2 0L77.5 505c-12 12-18.8 28.3-18.8 45.3c0 35.3 28.7 64 64 64h43.4V908c0 17.7 14.3 32 32 32H448V716h112v224h265.9c17.7 0 32-14.3 32-32V614.3h43.4c17 0 33.3-6.7 45.3-18.8c24.9-25 24.9-65.5-.1-90.5z" />
+				</svg>
+			</a>
+			<a href="manager.html">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+					<path fill="currentColor"
+						d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4.18C9.6 1.84 10.7 1 12 1c1.3 0 2.4.84 2.82 2H19m-7 0a1 1 0 0 0-1 1a1 1 0 0 0 1 1a1 1 0 0 0 1-1a1 1 0 0 0-1-1M7 7V5H5v14h14V5h-2v2H7m5 11l-5-5h3V9h4v4h3l-5 5Z" />
+				</svg>
+			</a>
+		</div>
+		<div id="main">
+			<h1>Download Manager</h1>
+			<div class="downloadBox">
+				<h3 style="font-weight: normal; margin: 10px 0;">Download a video</h3>
+				<input type="text" id="url" />
+				<button onclick="doDownload('mp4')">Download as mp4</button>
+				<button onclick="doDownload('mp3')">Download as mp3</button>
+				<a href="https://youtube.com/" rel="noreferrer noopener">Go to YouTube</a>
+			</div>
+			<div class="videoList">
+				<!--
+					
+				-->
+			</div>
+		</div>
+		<script src="./client.js"></script>
+		<script>
+			function createVideoElement(videoId){
+				let div = document.createElement("div")
+					div.id = "video" + videoId
+					div.className = "video"
+					let title = document.createElement("p")
+						title.className = "videoTitle"
+						title.innerHTML = "Title: ..."
+					div.appendChild(title)
+
+					let status = document.createElement("p")
+						status.className = "videoStatus"
+						status.innerHTML = "Status: ..."
+					div.appendChild(status)
+
+					let progressBar = document.createElement("div")
+						progressBar.className = "progress"
+						let fill = document.createElement("div")
+						progressBar.appendChild(fill)
+						let fillText = document.createElement("p")
+							fillText.innerHTML = "0%"
+							fillText.className = "fillText unselectable"
+						progressBar.appendChild(fillText)
+					div.appendChild(progressBar)
+
+					let buttonList = document.createElement("div")
+						buttonList.className = "buttonList"
+
+						let downloadButton = document.createElement("button")
+							downloadButton.className = "download hidden"
+							downloadButton.innerHTML = "Download"
+						buttonList.appendChild(downloadButton)
+
+						let closeButton = document.createElement("button")
+							closeButton.className = "remove hidden"
+							closeButton.innerHTML = "Remove"
+						buttonList.appendChild(closeButton)
+					div.appendChild(buttonList)
+				
+				return div
+			}
+
+			const expireVideoDelay = 3600;
+			let downloadBox = document.querySelector(".downloadBox");
+			let videoListElement = document.querySelector(".videoList")
+			let URLBox = document.getElementById("url")
+			
+			function doDownload(format){
+				let url = URLBox.value
+				if(url === ""){
+					return
+				}
+				//check if there are multiple downloads
+				let downloadsInProgress = 0;
+				{
+					let videoList = getJson("videoList") || []
+					for (let i = 0; i < videoList.length; i++) {
+						let video = videoList[i];
+						let cache = video.cache
+						if(!cache){
+							downloadsInProgress++
+							continue
+						}
+
+						//cache exists
+						if(cache.ready === false && cache.error === false){
+							downloadsInProgress++
+							continue
+						}
+					}
+				}
+				if(downloadsInProgress > 3){
+					alert("Only three downloads are allowed at a time")
+					return
+				}
+				initDownload(url, format, (id, err) => {
+					if(err){
+						alert("Error while downloading: " + err)
+						return;
+					} else {
+						//it worked
+						//add to list
+						console.log("HI")
+						let list = getJson("videoList") || [];
+
+						//if there is same id in list
+						//and its ready
+						//download it
+						let match = list.find(video => video.id === id)
+						if(match){
+							//there is a match
+							//with same id
+							//dont add it
+							//however if it is ready
+							if(match.cache && match.cache.ready === true){
+								let button = document.querySelector(`#video${id} .download`)
+								if(button){
+									button.click();
+								} else {
+									console.warn("no button")
+								}
+							}
+						} else {
+							list.push({
+								id: id,
+								timestamp: now(),
+								cache: null,
+							});
+							setJson("videoList", list)
+							interval()
+						}
+					}
+				})
+			}
+			
+			function interval(){
+				let videoList = getJson("videoList") || [];
+				//videoList
+				//got it
+				for (let i = 0; i < videoList.length; i++) {
+					const video = videoList[i];
+					let cache = video.cache
+					let id = video.id
+					let timestamp = parseInt(video.timestamp, 10)
+					if((timestamp + expireVideoDelay) <= now()){
+						//dont show it
+						//remove it
+						console.log("removing because expired")
+						videoList.splice(i, 1)
+						setJson("videoList", videoList)
+					} else {
+						//if(done) continue;
+						let videoElement = document.querySelector(`#video${id}`)
+						if(cache && cache.ready === true && videoElement !== null){
+							//dont send any extra requests because they are not required
+							continue
+						}
+						//send the request
+						let url = `${window.location.origin}/info`
+						console.log(`Fetching ${url}`)
+						fetch(url, {headers: {id: id}}).then(resp => {
+							//got response
+							//check if ok
+							if(resp.ok){
+								//ok
+								//update the element
+								resp.json().then(videoInfo => {
+									//got videoInfo
+									//update the element
+									//find the element
+									//let videoElement = document.querySelector(`#video${id}`)
+									function update(element){
+										videoList[i].cache = videoInfo;
+										setJson("videoList", videoList);
+										//update the element
+										function select(selector){
+											return document.querySelector(`#${element.id} ${selector}`)
+										}
+										let videoTitleElement = select(".videoTitle")
+										let videoStatusElement = select(".videoStatus")
+										let videoProgressElement = select(".progress")
+										let videoProgressElementFill = select(".progress > div")
+										let videoProgressElementText = select(".progress .fillText")
+										let videoDownloadButtonElement = select(".download")
+										let videoRemoveButtonElement = select(".remove")
+										
+										//videoInfo
+										/*
+											{
+												id: 0,
+												title: "video title",
+												progressPercent: 0,
+												url: "",
+												ready: false,
+												error: false,
+											}
+										*/
+										videoTitleElement.textContent = "Title: " + videoInfo.title;
+										videoStatusElement.textContent = "Status: " + videoInfo.status || "?";
+										if(videoInfo.ready === true){
+											videoProgressElementText.textContent = "DONE";
+											videoProgressElementFill.style.cssText = "width: 100%"
+											//add button listener
+											videoDownloadButtonElement.classList.remove("hidden")
+											videoDownloadButtonElement.onclick = () => {
+												//send another info request
+												fetch(url, {headers: {id: id}}).then(resp => {
+													if(resp.ok){
+														let dl = document.createElement('a');
+														dl.setAttribute('href', videoInfo.url);
+														let newTitle = videoInfo.title.replace(/\./g, ' ');
+														dl.setAttribute('download', newTitle);
+														dl.click();
+													} else {
+														//couldn't find video
+														alert("Couldn't find video, removing")
+														//remove it
+														videoRemoveButtonElement.onclick();
+													}
+												}).catch(err => {
+													console.log(err)
+													alert("Can't connect to server")
+												})
+												
+											}
+											videoDownloadButtonElement.textContent = `Download ${videoInfo.format}`
+											videoRemoveButtonElement.classList.remove("hidden")
+											videoRemoveButtonElement.onclick = () => {
+												//remove this video from the list of videos
+												let updatedVideoList = getJson("videoList");
+												if(updatedVideoList !== null){
+													let videoInList = updatedVideoList.find(video => {
+														return video.id === id && video.timestamp === timestamp.toString()
+													})
+													//remove from list
+													let index = updatedVideoList.indexOf(videoInList);
+													if(index !== -1){
+														updatedVideoList.splice(index, 1);
+														setJson("videoList", updatedVideoList);
+													}
+												}
+												//remove the element
+												let element = document.querySelector(`#video${id}`);
+												if(element){
+													element.remove()
+												}
+											}
+										} else if (videoInfo.error === true){
+											videoProgressElementFill.style.cssText = `width: 100%; background-color: red`
+											videoProgressElementText.textContent = "FAILED"
+										} else {
+											//not done
+											videoProgressElementText.textContent = `${Math.round(videoInfo.progressPercent)}%`;
+											videoProgressElementFill.style.cssText = `width: ${videoInfo.progressPercent}%`;
+										}
+									}
+									if(videoElement == null){
+										let element = createVideoElement(id);
+										videoListElement.appendChild(element)
+										update(element)
+									} else {
+										update(videoElement);
+									}
+								}).catch(err => {
+									console.log(err)
+									console.log("Failed to parse JSON")
+								})
+							} else {
+								if(cache){
+									alert(`Video ${cache.title} not found, removing`)
+								} else {
+									alert(`Video with id ${id} not found, removing`);
+								}
+								
+								videoList.splice(i, 1);
+								setJson("videoList", videoList)
+								return;
+							}
+						}).catch(err => {
+							console.log(`Failed to get video info for id ${id}`);
+						})
+					}
+				}
+			}
+
+			//set an interval
+			interval()
+			setInterval(() => {
+				//every 0.5 seconds
+				//
+				//if(document.hasFocus()){
+					interval()
+				//}
+			}, 2000);
+		</script>
+	</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="style.css">
+		<title>YouTube Downloader</title>
+	</head>
+
+	<body>
+		<div id="sidebar">
+			<p class="top">YTDL</p>
+			<a href="index.html">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+					<path fill="white"
+						d="M946.5 505L534.6 93.4a31.93 31.93 0 0 0-45.2 0L77.5 505c-12 12-18.8 28.3-18.8 45.3c0 35.3 28.7 64 64 64h43.4V908c0 17.7 14.3 32 32 32H448V716h112v224h265.9c17.7 0 32-14.3 32-32V614.3h43.4c17 0 33.3-6.7 45.3-18.8c24.9-25 24.9-65.5-.1-90.5z" />
+				</svg>
+			</a>
+			<a href="manager.html">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+					<path fill="currentColor"
+						d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4.18C9.6 1.84 10.7 1 12 1c1.3 0 2.4.84 2.82 2H19m-7 0a1 1 0 0 0-1 1a1 1 0 0 0 1 1a1 1 0 0 0 1-1a1 1 0 0 0-1-1M7 7V5H5v14h14V5h-2v2H7m5 11l-5-5h3V9h4v4h3l-5 5Z" />
+				</svg>
+			</a>
+		</div>
+		<div id="main">
+			<h1>YouTube Downloader</h1>
+			<p>Download YouTube videos in a few clicks</p>
+			<div class="downloadBox">
+				<h3 style="font-weight: normal; margin: 10px 0;">Download a video</h3>
+				<input type="text" id="url" />
+				<button onclick="doDownload('mp4')">Download as mp4</button>
+				<button onclick="doDownload('mp3')">Download as mp3</button>
+				<a href="https://youtube.com/" rel="noreferrer noopener">Go to YouTube</a>
+			</div>
+		</div>
+		<script src="./client.js"></script>
+		<script>
+			//do script
+			let downloadBox = document.querySelector(".downloadBox");
+			
+			let URLBox = document.getElementById("url")
+			
+			function doDownload(format){
+				let url = URLBox.value
+				if(url === ""){
+					return
+				}
+				initDownload(url, format, (id, err) => {
+					if(err){
+						alert("Error while downloading: " + err)
+						return;
+					} else {
+						//it worked
+						//add to list
+						let list = getJson("videoList") || [];
+						list.push({
+							id: id,
+							timestamp: now(),
+							cache: null,
+						});
+						setJson("videoList", list);
+						window.location = "/manager.html";
+					}
+				})
+			}
+		</script>
+	</body>
+</html>
