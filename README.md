@@ -1,22 +1,9 @@
-# Really Good Youtube Downloader
-![GitHub repo size](https://img.shields.io/github/repo-size/GabeeCoding/youtube-downloader)
-![GitHub last commit](https://img.shields.io/github/last-commit/GabeeCoding/youtube-downloader)
-![GitHub forks](https://img.shields.io/github/forks/GabeeCoding/youtube-downloader)
+# [v2] YouTube Downloader
+![GitHub repo size](https://img.shields.io/github/repo-size/GabeeCoding/youtube-downloader-v2)
+![GitHub last commit](https://img.shields.io/github/last-commit/GabeeCoding/youtube-downloader-v2)
+![GitHub forks](https://img.shields.io/github/forks/GabeeCoding/youtube-downloader-v2)
 
-Hello! I made this youtube downloader in 2 days. It can download mp3 and mp4 files.
-
-The backend uses express as a server and the frontend is made with HTML.
-
-## Start-up guide
-
-Install dependencies
-
-    npm i
-
-Start the server (defaults to port 3000)
-
-    node app
-
-To set a custom port use the PORT environment variable
-
+YouTube downloader v2
+Includes a backend and a frontend
+Uses express as the backend framework and uses ffmpeg to convert mp4 to mp3, make sure you are using node version >=16 for ffmpeg to work
 Enjoy
