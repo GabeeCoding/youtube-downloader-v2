@@ -34,3 +34,29 @@ function setJson(key, value){
 function now(){
 	return (Date.now() / 1000).toFixed(0)
 }
+
+let hasHtmlExt = window.location.pathname.endsWith(".html")
+
+function goToPage(page){
+	let pathname = window.location.pathname
+    let url = window.location.origin + pathname
+	if(hasHtmlExt){
+        //if it has the html extensino
+        //split it
+        let spl = pathname.split("/")
+        let doc = spl[spl.length - 1]
+        let split = pathname.split(doc)
+        split.pop()
+        url = split.join("/") + page
+    } else {
+        //it doesnt
+        if(pathname.endsWith("/")){
+            //ends with /
+            url += page
+        } else {
+            url = url + "/" + page
+        }
+    }
+    window.location = url
+	//return url
+}
